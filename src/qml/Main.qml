@@ -1,4 +1,4 @@
-pragma ComponentBehavior: Bound
+﻿pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import CloudOSS
@@ -6,55 +6,58 @@ import "components"
 
 Window {
     id: window
+
     visible: true
-    width: 1000
-    height: 600
-    title: "CloudOSS"
+    width: 1280
+    height: 820
+    minimumWidth: 1080
+    minimumHeight: 720
+    title: "CloudOSS 控制台"
+    color: "#f6f8fa"
+
     StackView {
         id: stackView
-        initialItem: loginPage
         anchors.fill: parent
+        initialItem: loginPage
+        clip: true
     }
 
     Component {
         id: loginPage
+
         LoginPage {
-            onSwitchToRegister: {
-                stackView.push(registerPage, StackView.ReplaceTransition);
-            }
+            onSwitchToRegister: stackView.push(registerPage, StackView.PushTransition)
+            onSwitchToDashboard: stackView.replace(dashboardPage, StackView.ReplaceTransition)
         }
     }
+
     Component {
         id: registerPage
-        RegisterPage {
 
-            onSwitchToDashboard: {
-                stackView.replace(dashboardPage, StackView.ReplaceTransition);
-            }
-            onSwitchToLogin: {
-                stackView.replace(loginPage);
-            }
+        RegisterPage {
+            onSwitchToLogin: stackView.pop(StackView.PopTransition)
+            onSwitchToDashboard: stackView.replace(dashboardPage, StackView.ReplaceTransition)
         }
     }
+
     Component {
         id: dashboardPage
+
         DashboardPage {}
     }
+
     DanmuToast {
         id: toast
     }
 
     Connections {
-        target: AuthService
-        function onLoginFailed(error) {
-            console.log("登录失败", error);
-            ToastService.info("网络错误");
-        }
-    }
-    Connections {
         target: ToastService
+
         function onShowRequested(message, type) {
             toast.show(message, type);
         }
     }
 }
+
+
+

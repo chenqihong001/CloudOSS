@@ -1,7 +1,6 @@
 #pragma once
 #include "HttpClient.h"
 #include <QJsonDocument>
-#include <aws/s3/S3ServiceClientModel.h>
 #include <qjsondocument.h>
 #include <qjsonobject.h>
 #include <qjsonparseerror.h>
@@ -23,6 +22,9 @@ QNetworkReply *HttpClient::get(const QString &path) {
 QNetworkReply *HttpClient::post(const QString &path, const QJsonObject &json) {
   auto req = buildRequest(path);
   req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+  if (!accessToken_.isEmpty()) {
+    req.setRawHeader("Authorization", QByteArray("Bearer ") + accessToken_.toUtf8());
+  }
   QJsonDocument doc(json);
   return manager_->post(req, doc.toJson());
 }

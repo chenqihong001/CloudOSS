@@ -2,7 +2,6 @@
 #include <QCoreApplication>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
-#include <aws/core/http/HttpTypes.h>
 #include <functional>
 #include <qjsondocument.h>
 #include <qjsonobject.h>
@@ -35,5 +34,6 @@ private:
   QNetworkRequest buildRequest(const QString &path);
 
   QString host_;
+  QString accessToken_;
   QNetworkAccessManager *manager_;
 };

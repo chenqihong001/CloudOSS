@@ -16,7 +16,7 @@
             },
             "environment": {
                 "VCPKG_ROOT": "D:/App/VisualStudio/VC/vcpkg",
-                "PATH": ""
+                "PATH": "$penv{PATH}"
             }
         },
         {
