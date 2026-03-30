@@ -2,3 +2,4 @@
 build
 .clangd
 env.ps1
+CODEX.md

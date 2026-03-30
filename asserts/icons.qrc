@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/">
+        <file>icons/app.svg</file>
         <file>icons/folder-open.svg</file>
         <file>icons/chart-column.svg</file>
         <file>icons/file-text.svg</file>
@@ -10,5 +11,6 @@
         <file>icons/key.svg</file>
         <file>icons/copy.svg</file>
         <file>icons/ellipsis-vertical.svg</file>
+        <file>icons/chevron-down.svg</file>
     </qresource>
 </RCC>

@@ -1,74 +1,82 @@
-#pragma once
 #include "HttpClient.h"
-#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonParseError>
+#include <qcborvalue.h>
 #include <qjsondocument.h>
 #include <qjsonobject.h>
 #include <qjsonparseerror.h>
 #include <qnetworkreply.h>
 #include <qnetworkrequest.h>
 #include <qobject.h>
-#include <qstringview.h>
 #include <qurl.h>
+HttpClient::HttpClient(QObject *parent) : QObject(parent) {}
 
 HttpClient &HttpClient::instance() {
-  static HttpClient client("http://localhost:5566");
+  static HttpClient client;
+  client.setBaseUrl("http://127.0.0.1:5566");
   return client;
 }
 
-QNetworkReply *HttpClient::get(const QString &path) {
-  return manager_->get(buildRequest(path));
+void HttpClient::setBaseUrl(const QString &baseUrl) {
+  baseUrl_ = baseUrl;
 }
 
-QNetworkReply *HttpClient::post(const QString &path, const QJsonObject &json) {
-  auto req = buildRequest(path);
+void HttpClient::setAccessToken(const QString &token) {
+  accessToken_ = token;
+}
+
+QNetworkRequest HttpClient::buildRequest(const QString &path) const {
+  QString normalized = path.startsWith("/") ? path : "/" + path;
+  QNetworkRequest req(QUrl(baseUrl_ + normalized));
   req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
   if (!accessToken_.isEmpty()) {
     req.setRawHeader("Authorization", QByteArray("Bearer ") + accessToken_.toUtf8());
   }
-  QJsonDocument doc(json);
-  return manager_->post(req, doc.toJson());
+  return req;
 }
 
-void HttpClient::post(const QString &path, const QJsonObject &req, Callback &&callback) {
-  auto reply = post(path, req);
-  connect(reply, &QNetworkReply::finished, [callback = std::move(callback), reply]() {
-    QJsonObject resp;
+void HttpClient::handleReply(QNetworkReply *reply, Callback &&callback) {
+  QObject::connect(reply, &QNetworkReply::finished, [reply, callback = std::move(callback)]() mutable {
+    QJsonObject result;
     if (reply->error() != QNetworkReply::NoError) {
-      handleNetworkError(reply);
-      resp["error"] = handleNetworkError(reply);
-      callback(resp);
+      result.insert("success", false);
+      result.insert("error", reply->errorString());
+      callback(result);
+      reply->deleteLater();
       return;
     }
-    // 没有错误
-    QByteArray data = reply->readAll();
+    const QByteArray body = reply->readAll();
     QJsonParseError parseError;
-    QJsonDocument doc = QJsonDocument::fromJson(data, &parseError);
+    const QJsonDocument doc = QJsonDocument::fromJson(body, &parseError);
     if (parseError.error != QJsonParseError::NoError) {
-      resp["error"] = parseError.errorString();
-      callback(resp);
+      result.insert("success", false);
+      result.insert("error", "invalid json response");
+      callback(result);
+      reply->deleteLater();
       return;
     }
-    callback(doc.object()); // 返回结果
+    callback(doc.object());
+    reply->deleteLater();
   });
 }
 
-QNetworkReply *HttpClient::put(const QString &path, const QJsonObject &json) {
-  auto req = buildRequest(path);
-  req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
-  QJsonDocument doc(json);
-  return manager_->put(req, doc.toJson());
+void HttpClient::get(const QString &path, Callback &&callback) {
+  QNetworkReply *reply = manager_.get(buildRequest(path));
+  handleReply(reply, std::move(callback));
+}
+void HttpClient::post(const QString &path, const QJsonObject &req, Callback &&callback) {
+  QNetworkReply *reply = manager_.post(buildRequest(path), QJsonDocument(req).toJson());
+  handleReply(reply, std::move(callback));
 }
 
-QNetworkReply *HttpClient::del(const QString &path) {
-  return manager_->deleteResource(buildRequest(path));
+void HttpClient::put(const QString &path, const QJsonObject &req, Callback &&callback) {
+  QNetworkReply *reply = manager_.put(buildRequest(path), QJsonDocument(req).toJson());
+  handleReply(reply, std::move(callback));
 }
 
-QNetworkRequest HttpClient::buildRequest(const QString &path) {
-  return QNetworkRequest{QUrl{host_ + path}};
-}
-
-QString HttpClient::handleNetworkError(QNetworkReply *reply) {
-  auto error = reply->errorString();
-  qWarning() << "[HttpClient] handleNetworkError(): " << error;
-  return error;
+void HttpClient::del(const QString &path, const QJsonObject &req, Callback &&callback) {
+  QNetworkRequest request = buildRequest(path);
+  QNetworkReply *reply =
+      manager_.sendCustomRequest(request, "DELETE", QJsonDocument(req).toJson());
+  handleReply(reply, std::move(callback));
 }

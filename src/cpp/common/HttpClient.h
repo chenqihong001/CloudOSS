@@ -1,39 +1,32 @@
 #pragma once
-#include <QCoreApplication>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
+#include <QJsonObject>
 #include <functional>
-#include <qjsondocument.h>
 #include <qjsonobject.h>
-#include <qlogging.h>
 #include <qnetworkaccessmanager.h>
 #include <qnetworkreply.h>
 #include <qnetworkrequest.h>
-#include <qobject.h>
-#include <qoverload.h>
-
+#include <qtmetamacros.h>
 class HttpClient : public QObject {
+  Q_OBJECT
 public:
   using Callback = std::function<void(const QJsonObject &)>;
+
   static HttpClient &instance();
+  void setBaseUrl(const QString &baseUrl);
+  void setAccessToken(const QString &token);
 
-  HttpClient(const QString &host, QObject *parent = nullptr) : QObject(parent), host_(host) {
-    manager_ = new QNetworkAccessManager(this);
-  }
-  static QString handleNetworkError(QNetworkReply *reply); // 处理错误
-
-  QNetworkReply *get(const QString &path);
-
-  QNetworkReply *post(const QString &path, const QJsonObject &json);
+  void get(const QString &path, Callback &&callback);
   void post(const QString &path, const QJsonObject &req, Callback &&callback);
-
-  QNetworkReply *put(const QString &path, const QJsonObject &json);
-  QNetworkReply *del(const QString &path);
+  void put(const QString &path, const QJsonObject &req, Callback &&callback);
+  void del(const QString &path, const QJsonObject &req, Callback &&callback);
 
 private:
-  QNetworkRequest buildRequest(const QString &path);
+  explicit HttpClient(QObject *parent = nullptr);
+  QNetworkRequest buildRequest(const QString &path) const;
+  void handleReply(QNetworkReply *reply, Callback &&callback);
 
-  QString host_;
+private:
+  QString baseUrl_{"http://127.0.0.1:5566"};
   QString accessToken_;
-  QNetworkAccessManager *manager_;
+  QNetworkAccessManager manager_;
 };

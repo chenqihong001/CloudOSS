@@ -1,63 +1,33 @@
-﻿pragma ComponentBehavior: Bound
-import QtQuick
+﻿import QtQuick
 import QtQuick.Controls
-import CloudOSS
-import "components"
 
 Window {
-    id: window
-
+    width: 800
+    height: 800
     visible: true
-    width: 1280
-    height: 820
-    minimumWidth: 1080
-    minimumHeight: 720
-    title: "CloudOSS 控制台"
-    color: "#f6f8fa"
-
-    StackView {
-        id: stackView
+    title: "CloudOSS控制台"
+    Column {
         anchors.fill: parent
-        initialItem: loginPage
-        clip: true
+        Rectangle {}
+
+        Item {}
     }
 
-    Component {
-        id: loginPage
+    // StackView {
+    //     anchors.fill: parent
+    //     initialItem: mainPage
+    // }
 
-        LoginPage {
-            onSwitchToRegister: stackView.push(registerPage, StackView.PushTransition)
-            onSwitchToDashboard: stackView.replace(dashboardPage, StackView.ReplaceTransition)
-        }
-    }
-
-    Component {
-        id: registerPage
-
-        RegisterPage {
-            onSwitchToLogin: stackView.pop(StackView.PopTransition)
-            onSwitchToDashboard: stackView.replace(dashboardPage, StackView.ReplaceTransition)
-        }
-    }
-
-    Component {
-        id: dashboardPage
-
-        DashboardPage {}
-    }
-
-    DanmuToast {
-        id: toast
-    }
-
-    Connections {
-        target: ToastService
-
-        function onShowRequested(message, type) {
-            toast.show(message, type);
-        }
-    }
+    // Component {
+    //     id: loginPage
+    //     LoginPage {}
+    // }
+    // Component {
+    //     id: registerPage
+    //     RegisterPage {}
+    // }
+    // Component {
+    //     id: mainPage
+    //     Dashboard {}
+    // }
 }
-
-
-

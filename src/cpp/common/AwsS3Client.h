@@ -43,6 +43,8 @@ public:
   std::optional<std::vector<Aws::S3::Model::Object>> listObjects(const std::string &bucketName);
 
   bool putBucketCors(const std::string &bucketName);
+  bool putBucketPolicy(const std::string &bucketName, const std::string &policyBody);
+  bool getBucketPolicy(const std::string &bucketName);
 
   ~AwsS3Client() {
     Aws::ShutdownAPI(options_);
